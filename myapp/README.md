@@ -116,7 +116,7 @@ myapp
     └── nginx.conf
 ```
 
-Coloque as seguintes instrumentos nele:
+Coloque as seguintes instruções nele:
 ```
 server {
 
