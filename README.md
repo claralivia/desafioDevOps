@@ -1,3 +1,3 @@
 ## por Clara Lívia 🙋🏻‍♀️
 # Desafio DevOps
-Siga para a pasta "myapp".
+Siga para a pasta `📁 myapp`.
