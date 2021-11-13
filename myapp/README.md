@@ -107,6 +107,36 @@ build
 Dockerfile
 ```
 
+### nginx
+Crie uma pasta `nginx` na raiz do projeto e adicione o arquivo `nginx.conf`, ficará assim:
+
+```
+myapp
+└── nginx
+    └── nginx.conf
+```
+
+Coloque as seguintes instrumentos nele:
+```
+server {
+
+  listen 80;
+
+  location / {
+    root   /usr/share/nginx/html;
+    index  index.html index.htm;
+    try_files $uri $uri/ /index.html;
+  }
+
+  error_page   500 502 503 504  /50x.html;
+
+  location = /50x.html {
+    root   /usr/share/nginx/html;
+  }
+
+}
+```
+
 ### docker-compose
 Crie um arquivo `docker-compose.yml` na raiz do projeto e dê as seguintes expecificações, de acordo com a porta usada por você e o nome do container escolhido:
 
