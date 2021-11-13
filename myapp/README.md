@@ -1,70 +1,156 @@
-# Getting Started with Create React App
+# Criando a aplicação React 
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Você precisará ter o Node 14.0.0 ou uma versão posterior em sua máquina de desenvolvimento local** (mas não é obrigatório no servidor). Recomendo usar a versão mais recente do LTS. Você pode usar nvm (macOS / Linux) ou nvm-windows para alternar as versões do Node entre diferentes projetos.
 
-## Available Scripts
+Para criar um novo aplicativo, você pode escolher um dos seguintes métodos:
 
-In the project directory, you can run:
+### npx
 
-### `yarn start`
+```sh
+npx create-react-app myapp
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:8080](http://localhost:8080) to view it in the browser.
+_([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) é uma ferramenta de execução de pacote que vem com o npm 5.2+ e superior, consulte [instruções para versões anteriores do npm](https://gist.github.com/gaearon/4064d3c23a77c74a3614c498a8bb1c5f))_
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### npm
 
-### `yarn test`
+```sh
+npm init react-app myapp
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+_`npm init <initializer>` está disponível no npm 6+_
 
-### `yarn build`
+### Yarn
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```sh
+yarn create react-app myapp
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+_[`yarn create <starter-kit-package>`](https://yarnpkg.com/lang/en/docs/cli/create/) está disponível no Yarn 0.25+_
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Ele criará um diretório chamado `myapp` dentro da pasta atual. <br>
+Dentro desse diretório, ele irá gerar a estrutura inicial do projeto e instalar as dependências transitivas:
 
-### `yarn eject`
+```
+myapp
+├── README.md
+├── node_modules
+├── package.json
+├── .gitignore
+├── public
+│   ├── favicon.ico
+│   ├── index.html
+│   └── manifest.json
+└── src
+    ├── App.css
+    ├── App.js
+    ├── App.test.js
+    ├── index.css
+    ├── index.js
+    ├── logo.svg
+    └── serviceWorker.js
+    └── setupTests.js
+```
+Nenhuma configuração ou estruturas de pastas que sejam complicadas, apenas os arquivos que você precisará para criar o seu aplicativo. <br>
+Assim que a instalação for concluída, você pode abrir a pasta do seu projeto dando o segunte comando:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+```sh
+cd myapp
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Dockerizando a aplicação React
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Dockerfile
+Crie um arquivo `Dockerfile` na raiz do projeto com as seguintes instruções dentro dele:
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```
+FROM node:13-alpine as build
 
-## Learn More
+WORKDIR /app
+ENV PATH /app/node_modules/.bin:$PATH
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+COPY package.json ./
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+RUN npm install --silent
+RUN npm install react-scripts@3.4.1 -g --silent
 
-### Code Splitting
+COPY . ./
+EXPOSE 4000
+RUN npm run build
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# production environment
+FROM nginx:1.16.0-alpine
 
-### Analyzing the Bundle Size
+COPY --from=build /app/build/ /usr/share/nginx/html
+COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+EXPOSE 80
+CMD [“nginx”, “-g”, “daemon off;”]
+```
 
-### Making a Progressive Web App
+Certifique-se de usar o NGINX  para permitir o acesso através da porta 80 direcionando para a porta do container.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### .env
+Crie um arquivo de configuração `.env` na raiz do projeto e expecifique, dentro dele, a porta que desejar:
 
-### Advanced Configuration
+```
+PORT=4000
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### .dockerignore
+Crie um arquivo `.dockerignore` na raiz do projeto e adicione nele:
 
-### Deployment
+```
+node_modules
+build
+.dockerignore
+Dockerfile
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### docker-compose
+Crie um arquivo `docker-compose.yml` na raiz do projeto e dê as seguintes expecificações, de acordo com a porta usada por você e o nome do container escolhido:
 
-### `yarn build` fails to minify
+```
+version: '3.7'
+services:
+    app:
+        container_name: meu-app
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - '4000:80'
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Comando `build`
+Execute o seguinte comando para construir a imagem Docker a partir do docker-compose:
+
+```
+docker-compose up -d --build
+```
+
+# Iniciando
+Dentro do projeto recém-criado, você dá um dos seguntes comando:
+
+### npm
+
+```
+npm start
+```
+
+### Yarn
+
+```
+yarn start
+```
+
+A partir desse ponto, você poderá acessar a aplicação em [http://localhost:4000](http://localhost:4000) no seu navegador. <br>
+Lembrando que a porta indicada deve ser a exposta no projeto.
+
+
+# Saiba mais
+Você pode saber mais em [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+
+
+
